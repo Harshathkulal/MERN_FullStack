@@ -5,13 +5,19 @@ const TodoList = () => {
   const [todos, setTodos] = useState([]);
   const [newTodo, setNewTodo] = useState("");
 
+  // Fetch all todos
   useEffect(() => {
     fetch("/api/todos")
       .then((res) => res.json())
       .then((data) => setTodos(data));
   }, []);
 
+  // Add a new todo
   const addTodo = () => {
+    if (!newTodo) {
+      alert("Please enter a todo");
+      return;
+    }
     fetch("/api/todos", {
       method: "POST",
       headers: {
@@ -24,12 +30,30 @@ const TodoList = () => {
     setNewTodo("");
   };
 
+  // Delete a todo
   const deleteTodo = (id) => {
     fetch(`/api/todos/${id}`, {
       method: "DELETE",
     }).then(() => {
       setTodos(todos.filter((todo) => todo._id !== id));
     });
+  };
+
+  // Update a todo
+  const updateTodo = (id, newText) => {
+    fetch(`/api/todos/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ text: newText }),
+    })
+      .then((res) => res.json())
+      .then((updatedTodo) => {
+        // Update the state with the new todo
+        setTodos(todos.map((todo) => (todo._id === id ? updatedTodo : todo)));
+      })
+      .catch((err) => console.error(err));
   };
 
   return (
@@ -52,7 +76,12 @@ const TodoList = () => {
       </div>
       <div>
         {todos.map((todo) => (
-          <TodoItem key={todo._id} todo={todo} deleteTodo={deleteTodo} />
+          <TodoItem
+            key={todo._id}
+            todo={todo}
+            deleteTodo={deleteTodo}
+            updateTodo={updateTodo}
+          />
         ))}
       </div>
     </div>

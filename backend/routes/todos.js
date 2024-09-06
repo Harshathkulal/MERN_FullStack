@@ -1,9 +1,9 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const Todo = require('../models/Todo');
+const Todo = require("../models/Todo");
 
 // Get all todos
-router.get('/', async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const todos = await Todo.find();
     res.json(todos);
@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
 });
 
 // Create a new todo
-router.post('/', async (req, res) => {
+router.post("/", async (req, res) => {
   const todo = new Todo({
     text: req.body.text,
   });
@@ -26,15 +26,25 @@ router.post('/', async (req, res) => {
 });
 
 // Update a todo
-router.patch('/:id', async (req, res) => {
+router.patch("/:id", async (req, res) => {
   try {
-    const todo = await Todo.findById(req.params.id);
-    if (!todo) return res.status(404).json({ message: 'Todo not found' });
+    const { text } = req.body;
+    if (!text) {
+      return res
+        .status(400)
+        .json({ message: "Text is required to update the todo" });
+    }
 
-    todo.completed = req.body.completed !== undefined ? req.body.completed : todo.completed;
-    todo.text = req.body.text !== undefined ? req.body.text : todo.text;
+    // Find the todo and update its text
+    const updatedTodo = await Todo.findByIdAndUpdate(
+      req.params.id,
+      { text },
+      { new: true, runValidators: true } // Returns the updated document
+    );
 
-    const updatedTodo = await todo.save();
+    if (!updatedTodo) {
+      return res.status(404).json({ message: "Todo not found" });
+    }
     res.json(updatedTodo);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -42,15 +52,15 @@ router.patch('/:id', async (req, res) => {
 });
 
 // Delete a todo
-router.delete('/:id', async (req, res) => {
-    try {
-      const todo = await Todo.findByIdAndDelete(req.params.id);
-      if (!todo) return res.status(404).json({ message: 'Todo not found' });
-  
-      res.json({ message: 'Todo deleted', id: req.params.id });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
-    }
-  });
+router.delete("/:id", async (req, res) => {
+  try {
+    const todo = await Todo.findByIdAndDelete(req.params.id);
+    if (!todo) return res.status(404).json({ message: "Todo not found" });
+
+    res.json({ message: "Todo deleted", id: req.params.id });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 module.exports = router;
